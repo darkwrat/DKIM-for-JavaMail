@@ -9,14 +9,16 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import org.jetbrains.annotations.Nullable;
 import sun.misc.BASE64Encoder;
 
 import com.sun.mail.util.QPEncoderStream;
@@ -25,38 +27,37 @@ import com.sun.mail.util.QPEncoderStream;
  * @author Florian Sager, http://www.agitos.de, 22.11.2008
  */
 
-public class DKIMUtil {
+public class DkimUtil {
 
-    protected static String[] splitHeader(String header) throws DKIMSignerException {
-        int colonPos = header.indexOf(':');
+    protected static String[] splitHeader(String header) throws DkimSignerException {
+        final int colonPos = header.indexOf(':');
         if (colonPos == -1) {
-            throw new DKIMSignerException("The header string " + header + " is no valid RFC 822 header-line");
+            throw new DkimSignerException("The header string " + header + " is no valid RFC 822 header-line");
         }
         return new String[]{header.substring(0, colonPos), header.substring(colonPos + 1)};
     }
 
     protected static String concatArray(ArrayList l, String separator) {
-        StringBuffer buf = new StringBuffer();
-        Iterator iter = l.iterator();
-        while (iter.hasNext()) {
-            buf.append(iter.next()).append(separator);
+        final StringBuilder buf = new StringBuilder();
+        for (Object aL : l) {
+            buf.append(aL).append(separator);
         }
 
         return buf.substring(0, buf.length() - separator.length());
     }
 
     protected static boolean isValidDomain(String domainname) {
-        Pattern pattern = Pattern.compile("(.+)\\.(.+)");
-        Matcher matcher = pattern.matcher(domainname);
+        final Pattern pattern = Pattern.compile("(.+)\\.(.+)");
+        final Matcher matcher = pattern.matcher(domainname);
         return matcher.matches();
     }
 
     // FSTODO: converts to "platforms default encoding" might be wrong ?
-    protected static String QuotedPrintable(String s) {
+    protected static @Nullable String QuotedPrintable(String s) {
 
         try {
-            ByteArrayOutputStream boas = new ByteArrayOutputStream();
-            QPEncoderStream encodeStream = new QPEncoderStream(boas);
+            final ByteArrayOutputStream boas = new ByteArrayOutputStream();
+            final QPEncoderStream encodeStream = new QPEncoderStream(boas);
             encodeStream.write(s.getBytes());
 
             String encoded = boas.toString();
@@ -65,64 +66,64 @@ public class DKIMUtil {
 
             return encoded;
 
-        } catch (IOException ioe) {
+        } catch (IOException ignored) {
         }
 
         return null;
     }
 
     protected static String base64Encode(byte[] b) {
-        BASE64Encoder base64Enc = new BASE64Encoder();
+        final BASE64Encoder base64Enc = new BASE64Encoder();
         String encoded = base64Enc.encode(b);
         // remove unnecessary linefeeds after 76 characters
         encoded = encoded.replace("\n", ""); // Linux+Win
         return encoded.replace("\r", ""); // Win --> FSTODO: select Encoder without line termination
     }
 
-    public boolean checkDNSForPublickey(String signingDomain, String selector) throws DKIMSignerException {
+    public boolean checkDNSForPublickey(String signingDomain, String selector) throws DkimSignerException {
 
-        Hashtable<String, String> env = new Hashtable<String, String>();
+        final Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-        String recordname = selector + "._domainkey." + signingDomain;
+        final String recordname = selector + "._domainkey." + signingDomain;
         String value = null;
 
         try {
-            DirContext dnsContext = new InitialDirContext(env);
+            final DirContext dnsContext = new InitialDirContext(env);
 
-            javax.naming.directory.Attributes attribs = dnsContext.getAttributes(recordname, new String[]{"TXT"});
-            javax.naming.directory.Attribute txtrecord = attribs.get("txt");
+            final Attributes attribs = dnsContext.getAttributes(recordname, new String[]{"TXT"});
+            final Attribute txtrecord = attribs.get("txt");
 
             if (txtrecord == null) {
-                throw new DKIMSignerException("There is no TXT record available for " + recordname);
+                throw new DkimSignerException("There is no TXT record available for " + recordname);
             }
 
             // "v=DKIM1; g=*; k=rsa; p=MIGfMA0G ..."
             value = (String) txtrecord.get();
 
         } catch (NamingException ne) {
-            throw new DKIMSignerException("Selector lookup failed", ne);
+            throw new DkimSignerException("Selector lookup failed", ne);
         }
 
         if (value == null) {
-            throw new DKIMSignerException("Value of RR " + recordname + " couldn't be retrieved");
+            throw new DkimSignerException("Value of RR " + recordname + " couldn't be retrieved");
         }
 
         // try to read public key from RR
-        String[] tags = value.split(";");
+        final String[] tags = value.split(";");
         for (String tag : tags) {
             tag = tag.trim();
             if (tag.startsWith("p=")) {
 
                 try {
-                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
                     // decode public key, FSTODO: convert to DER format
-                    PKCS8EncodedKeySpec pubSpec = new PKCS8EncodedKeySpec(tag.substring(2).getBytes());
-                    RSAPrivateKey pubKey = (RSAPrivateKey) keyFactory.generatePublic(pubSpec);
+                    final PKCS8EncodedKeySpec pubSpec = new PKCS8EncodedKeySpec(tag.substring(2).getBytes());
+                    final RSAPrivateKey pubKey = (RSAPrivateKey) keyFactory.generatePublic(pubSpec);
                 } catch (NoSuchAlgorithmException nsae) {
-                    throw new DKIMSignerException("RSA algorithm not found by JVM");
+                    throw new DkimSignerException("RSA algorithm not found by JVM", nsae);
                 } catch (InvalidKeySpecException ikse) {
-                    throw new DKIMSignerException("The public key " + tag + " in RR " + recordname + " couldn't be decoded.");
+                    throw new DkimSignerException("The public key " + tag + " in RR " + recordname + " couldn't be decoded.", ikse);
                 }
 
                 // FSTODO: create test signature with privKey and test validation with pubKey to check on a valid key pair
@@ -131,7 +132,7 @@ public class DKIMUtil {
             }
         }
 
-        throw new DKIMSignerException("No public key available in " + recordname);
+        throw new DkimSignerException("No public key available in " + recordname);
     }
 
 }

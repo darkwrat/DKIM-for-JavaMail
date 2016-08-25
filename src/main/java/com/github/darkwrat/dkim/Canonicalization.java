@@ -1,5 +1,7 @@
 package com.github.darkwrat.dkim;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 
 /*
@@ -10,21 +12,25 @@ import java.io.IOException;
 
 public class Canonicalization {
 
-    public static Canonicalization SIMPLE = new Canonicalization() {
+    @SuppressWarnings("OverlyComplexAnonymousInnerClass")
+    public static final Canonicalization SIMPLE = new Canonicalization() {
 
+        @Override
         public String getType() {
 
             return "simple";
         }
 
+        @Override
         public String canonicalizeHeader(String name, String value) {
 
-            return name + ":" + value;
+            return name + ':' + value;
         }
 
-        public String canonicalizeBody(String body) throws IOException {
+        @Override
+        public String canonicalizeBody(String body) {
 
-            if (body == null || "".equals(body)) {
+            if (body == null || body.isEmpty()) {
                 return "\r\n";
             }
 
@@ -40,25 +46,30 @@ public class Canonicalization {
 
             return body;
         }
+
     };
 
-    public static Canonicalization RELAXED = new Canonicalization() {
+    @SuppressWarnings("OverlyComplexAnonymousInnerClass")
+    public static final Canonicalization RELAXED = new Canonicalization() {
 
+        @Override
         public String getType() {
 
             return "relaxed";
         }
 
+        @Override
         public String canonicalizeHeader(String name, String value) {
 
             name = name.trim().toLowerCase();
             value = value.replaceAll("\\s+", " ").trim();
-            return name + ":" + value;
+            return name + ':' + value;
         }
 
-        public String canonicalizeBody(String body) throws IOException {
+        @Override
+        public String canonicalizeBody(String body) {
 
-            if (body == null || "".equals(body)) {
+            if (body == null || body.isEmpty()) {
                 return "\r\n";
             }
 
@@ -77,20 +88,19 @@ public class Canonicalization {
 
             return body;
         }
-    };
 
-    public Canonicalization() {
-    }
+    };
 
     public String getType() {
         return "unknown";
     }
 
-    public String canonicalizeHeader(String name, String value) {
+    public @Nullable String canonicalizeHeader(String name, String value) {
         return null;
     }
 
-    public String canonicalizeBody(String body) throws IOException {
+    public @Nullable String canonicalizeBody(String body) throws IOException {
         return null;
     }
+
 }

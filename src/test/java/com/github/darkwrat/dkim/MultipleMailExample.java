@@ -16,15 +16,15 @@ import javax.mail.internet.InternetAddress;
 
 public class MultipleMailExample {
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         // read test configuration from test.properties in your classpath
-        Properties testProps = TestUtil.readProperties();
+        final Properties testProps = Utilities.readProperties();
 
         // get a JavaMail Session object
-        Session session = Session.getDefaultInstance(testProps, null);
+        final Session session = Session.getDefaultInstance(testProps, null);
 
-        Transport transport = session.getTransport("smtp");
+        final Transport transport = session.getTransport("smtp");
         transport.connect(testProps.getProperty("mail.smtp.host"),
                 testProps.getProperty("mail.smtp.auth.user"),
                 testProps.getProperty("mail.smtp.auth.password"));
@@ -33,21 +33,21 @@ public class MultipleMailExample {
         ///////// beginning of DKIM FOR JAVAMAIL stuff
 
         // get DKIMSigner object
-        DKIMSigner dkimSigner = new DKIMSigner(
+        final DkimSigner dkimSigner = new DkimSigner(
                 testProps.getProperty("mail.smtp.dkim.signingdomain"),
                 testProps.getProperty("mail.smtp.dkim.selector"),
                 testProps.getProperty("mail.smtp.dkim.privatekey"));
 
         for (int i = 0; i < 3; i++) {
 
-			/* set an address or user-id of the user on behalf this message was signed;
-			 * this identity is up to you, except the domain part must be the signing domain
-			 * or a subdomain of the signing domain.
-			 */
-            dkimSigner.setIdentity("multipleexample" + i + "@" + testProps.getProperty("mail.smtp.dkim.signingdomain"));
+            /* set an address or user-id of the user on behalf this message was signed;
+             * this identity is up to you, except the domain part must be the signing domain
+             * or a subdomain of the signing domain.
+             */
+            dkimSigner.setIdentity("multipleexample" + i + '@' + testProps.getProperty("mail.smtp.dkim.signingdomain"));
 
             // construct the JavaMail message using the DKIM message type from DKIM for JavaMail
-            Message msg = new SMTPDKIMMessage(session, dkimSigner);
+            final Message msg = new SmtpDkimMessage(session, dkimSigner);
 
             ///////// end of DKIM FOR JAVAMAIL stuff
 
@@ -63,7 +63,7 @@ public class MultipleMailExample {
             }
 
             msg.setSubject("DKIM for JavaMail: MultipleExample Testmessage " + i);
-            msg.setText(TestUtil.bodyText);
+            msg.setText(Utilities.bodyText);
 
             // send the message by JavaMail
             transport.sendMessage(msg, msg.getAllRecipients());
@@ -71,4 +71,5 @@ public class MultipleMailExample {
 
         transport.close();
     }
+
 }

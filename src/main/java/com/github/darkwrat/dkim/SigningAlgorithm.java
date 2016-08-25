@@ -8,8 +8,10 @@ package com.github.darkwrat.dkim;
 
 public class SigningAlgorithm {
 
-    public static SigningAlgorithm SHA256withRSA = new SigningAlgorithm("rsa-sha256", "SHA256withRSA", "sha-256");
-    public static SigningAlgorithm SHA1withRSA = new SigningAlgorithm("rsa-sha1", "SHA1withRSA", "sha-1");
+    @SuppressWarnings("ConstantNamingConvention")
+    public static final SigningAlgorithm SHA256withRSA = new SigningAlgorithm("rsa-sha256", "SHA256withRSA", "sha-256");
+    @SuppressWarnings("ConstantNamingConvention")
+    public static final SigningAlgorithm SHA1withRSA = new SigningAlgorithm("rsa-sha1", "SHA1withRSA", "sha-1");
 
     private String rfc4871Notation;
     private String javaSecNotation;
@@ -33,4 +35,5 @@ public class SigningAlgorithm {
     public String getRfc4871Notation() {
         return rfc4871Notation;
     }
+
 }

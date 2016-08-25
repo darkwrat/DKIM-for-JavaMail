@@ -18,13 +18,13 @@ import javax.mail.internet.MailDateFormat;
 
 public class MimeMailExample {
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         // read test configuration from test.properties in your classpath
-        Properties testProps = TestUtil.readProperties();
+        final Properties testProps = Utilities.readProperties();
 
         // generate string buffered test mail
-        StringBuffer mimeMail = new StringBuffer();
+        final StringBuilder mimeMail = new StringBuilder();
         mimeMail.append("Date: ").append(new MailDateFormat().format(new Date())).append("\r\n");
         mimeMail.append("From: ").append(testProps.getProperty("mail.smtp.from")).append("\r\n");
         if (testProps.getProperty("mail.smtp.to") != null) {
@@ -35,37 +35,38 @@ public class MimeMailExample {
         }
         mimeMail.append("Subject: ").append("DKIM for JavaMail: MimeMailExample Testmessage").append("\r\n");
         mimeMail.append("\r\n");
-        mimeMail.append(TestUtil.bodyText);
+        mimeMail.append(Utilities.bodyText);
 
         // get a JavaMail Session object
-        Session session = Session.getDefaultInstance(testProps, null);
+        final Session session = Session.getDefaultInstance(testProps, null);
 
 
         ///////// beginning of DKIM FOR JAVAMAIL stuff
 
         // get DKIMSigner object
-        DKIMSigner dkimSigner = new DKIMSigner(
+        final DkimSigner dkimSigner = new DkimSigner(
                 testProps.getProperty("mail.smtp.dkim.signingdomain"),
                 testProps.getProperty("mail.smtp.dkim.selector"),
                 testProps.getProperty("mail.smtp.dkim.privatekey"));
 
-		/* set an address or user-id of the user on behalf this message was signed;
+        /* set an address or user-id of the user on behalf this message was signed;
          * this identity is up to you, except the domain part must be the signing domain
-		 * or a subdomain of the signing domain.
-		 */
+         * or a subdomain of the signing domain.
+         */
         dkimSigner.setIdentity("mimemailexample@" + testProps.getProperty("mail.smtp.dkim.signingdomain"));
 
         // construct the JavaMail message using the DKIM message type from DKIM for JavaMail
-        Message msg = new SMTPDKIMMessage(session, new ByteArrayInputStream(mimeMail.toString().getBytes()), dkimSigner);
+        final Message msg = new SmtpDkimMessage(session, new ByteArrayInputStream(mimeMail.toString().getBytes()), dkimSigner);
 
         ///////// end of DKIM FOR JAVAMAIL stuff
 
         // send the message by JavaMail
-        Transport transport = session.getTransport("smtp");
+        final Transport transport = session.getTransport("smtp");
         transport.connect(testProps.getProperty("mail.smtp.host"),
                 testProps.getProperty("mail.smtp.auth.user"),
                 testProps.getProperty("mail.smtp.auth.password"));
         transport.sendMessage(msg, msg.getAllRecipients());
         transport.close();
     }
+
 }
