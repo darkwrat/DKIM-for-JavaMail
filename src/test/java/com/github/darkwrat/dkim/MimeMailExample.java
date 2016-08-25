@@ -17,7 +17,7 @@
  * A licence was granted to the ASF by Florian Sager on 30 November 2008
  */
 
-package de.agitos.dkim;
+package com.github.darkwrat.dkim;
 
 import java.io.ByteArrayInputStream;
 import java.util.Date;
