@@ -1,5 +1,13 @@
 package com.github.darkwrat.dkim;
 
+import com.sun.mail.util.QPEncoderStream;
+import org.jetbrains.annotations.Nullable;
+
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.KeyFactory;
@@ -8,20 +16,10 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Hashtable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-
-import org.jetbrains.annotations.Nullable;
-import sun.misc.BASE64Encoder;
-
-import com.sun.mail.util.QPEncoderStream;
 
 /*
  * @author Florian Sager, http://www.agitos.de, 22.11.2008
@@ -73,8 +71,8 @@ public class DkimUtil {
     }
 
     protected static String base64Encode(byte[] b) {
-        final BASE64Encoder base64Enc = new BASE64Encoder();
-        String encoded = base64Enc.encode(b);
+
+        String encoded = Base64.getEncoder().encodeToString(b);
         // remove unnecessary linefeeds after 76 characters
         encoded = encoded.replace("\n", ""); // Linux+Win
         return encoded.replace("\r", ""); // Win --> FSTODO: select Encoder without line termination
