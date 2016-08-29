@@ -220,14 +220,13 @@ public class DkimSigner {
     private String serializeDKIMSignature(Map<String, String> dkimSignature) {
 
         final Set<Entry<String, String>> entries = dkimSignature.entrySet();
-        final StringBuffer buf = new StringBuffer();
-        StringBuffer fbuf;
+        final StringBuilder buf = new StringBuilder();
         int pos = 0;
 
         for (Entry<String, String> entry : entries) {
             // buf.append(entry.getKey()).append("=").append(entry.getValue()).append(";\t");
 
-            fbuf = new StringBuffer();
+            final StringBuilder fbuf = new StringBuilder();
             fbuf.append(entry.getKey()).append('=').append(entry.getValue()).append(';');
 
             if (pos + fbuf.length() + 1 > MAX_HEADER_LENGTH) {
@@ -237,9 +236,9 @@ public class DkimSigner {
                 // line folding : this doesn't work "sometimes" --> maybe someone likes to debug this
 //                int i = 0;
 //                while (i < pos) {
-//                    if (fbuf.substring(i).length() > MAXHEADERLENGTH) {
-//                        buf.append("\r\n\t").append(fbuf.substring(i, i + MAXHEADERLENGTH));
-//                        i += MAXHEADERLENGTH;
+//                    if (fbuf.substring(i).length() > MAX_HEADER_LENGTH) {
+//                        buf.append("\r\n\t").append(fbuf.substring(i, i + MAX_HEADER_LENGTH));
+//                        i += MAX_HEADER_LENGTH;
 //                    } else {
 //                        buf.append("\r\n\t").append(fbuf.substring(i));
 //                        pos -= i;
