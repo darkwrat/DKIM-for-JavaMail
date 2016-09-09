@@ -99,6 +99,14 @@ public class DkimSigner {
         this.setSigningAlgorithm(this.signingAlgorithm);
     }
 
+    public String getSigningDomain() {
+        return signingDomain;
+    }
+
+    public String getSelector() {
+        return selector;
+    }
+
     public String getIdentity() {
         return identity;
     }
