@@ -4,7 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -22,22 +25,37 @@ import com.sun.mail.util.LineOutputStream;
 
 public class SmtpDkimMessage extends SMTPMessage {
 
-    private DkimSigner signer;
+    private List<DkimSigner> signers;
     private String encodedBody;
 
     public SmtpDkimMessage(Session session, DkimSigner signer) {
         super(session);
-        this.signer = signer;
+        this.signers = Collections.singletonList(signer);
     }
 
     public SmtpDkimMessage(MimeMessage message, DkimSigner signer) throws MessagingException {
         super(message);
-        this.signer = signer;
+        this.signers = Collections.singletonList(signer);
     }
 
     public SmtpDkimMessage(Session session, InputStream is, DkimSigner signer) throws MessagingException {
         super(session, is);
-        this.signer = signer;
+        this.signers = Collections.singletonList(signer);
+    }
+
+    public SmtpDkimMessage(Session session, List<DkimSigner> signers) {
+        super(session);
+        this.signers = signers;
+    }
+
+    public SmtpDkimMessage(MimeMessage message, List<DkimSigner> signers) throws MessagingException {
+        super(message);
+        this.signers = signers;
+    }
+
+    public SmtpDkimMessage(Session session, InputStream is, List<DkimSigner> signers) throws MessagingException {
+        super(session, is);
+        this.signers = signers;
     }
 
     /**
@@ -96,9 +114,11 @@ public class SmtpDkimMessage extends SMTPMessage {
         encodedBody = osBody.toString();
 
         // Second, sign the message
-        final String signatureHeaderLine;
+        final List<String> signatureHeaderLines = new ArrayList<>();
         try {
-            signatureHeaderLine = signer.sign(this);
+            for (DkimSigner signer : signers) {
+                signatureHeaderLines.add(signer.sign(this));
+            }
         } catch (Exception e) {
             throw new MessagingException(e.getLocalizedMessage(), e);
         }
@@ -107,7 +127,9 @@ public class SmtpDkimMessage extends SMTPMessage {
         final LineOutputStream los = new LineOutputStream(os);
 
         // set generated signature to the top
-        los.writeln(signatureHeaderLine);
+        for (String signatureHeaderLine : signatureHeaderLines) {
+            los.writeln(signatureHeaderLine);
+        }
 
         final Enumeration hdrLines = getNonMatchingHeaderLines(ignoreList);
         while (hdrLines.hasMoreElements()) {
